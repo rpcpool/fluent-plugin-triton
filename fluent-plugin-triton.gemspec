@@ -35,7 +35,8 @@ Gem::Specification.new do |spec|
   spec.add_dependency "json", "~> 2.5"
 
   spec.add_dependency "fluentd", "~> 1.0"
-
+  
+  spec.add_development_dependency "test-unit", "~> 3.6"
   # For more information and examples about making a new gem, check out our
   # guide at: https://bundler.io/guides/creating_gem.html
 end

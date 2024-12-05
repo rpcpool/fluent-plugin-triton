@@ -6,3 +6,4 @@
 /pkg/
 /spec/reports/
 /tmp/
+fluent-plugin-triton-*.gem

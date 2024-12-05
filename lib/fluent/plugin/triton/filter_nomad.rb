@@ -1,26 +1,24 @@
+# frozen_string_literal: true
+
 require 'fluent/plugin/filter'
 require './lib/nomad'
-require 'thread'
 
 module Fluent
   module Plugin
     module Triton
-
       class FilterNomad < Fluent::Plugin::Filter
-
-        @@nomad_client_factory_repo = {} 
+        @@nomad_client_factory_repo = {}
 
         def self.registry_nomad_client_factory(name, &factory)
           @@nomad_client_factory_repo[name.to_sym] = factory
         end
 
-        self.registry_nomad_client_factory(:default) do |opts|
-          Nomad::NomadClient.load_from_env(nomad_token: opts[:nomad_token], nomad_addr: opts[:nomad_addr]) 
+        registry_nomad_client_factory(:default) do |opts|
+          Nomad::NomadClient.load_from_env(nomad_token: opts[:nomad_token], nomad_addr: opts[:nomad_addr])
         end
 
         # Register this filter as "passthru"
         Fluent::Plugin.register_filter('nomad', self)
-
 
         # Loader Thread helper to run the Nomad client in background
         helpers :timer
@@ -35,7 +33,7 @@ module Fluent
 
         desc '(Optional) Nomad token to authenticate API calls'
         config_param :nomad_token, :string, secret: true, default: nil
-        
+
         desc '(Optional) Nomad client factory to create Nomad client'
         config_param :nomad_client_factory, :string, default: :default
 
@@ -54,30 +52,28 @@ module Fluent
           log.info("Nomad client initialized with nomad addr: #{@nomad_addr}")
         end
 
-
         def start
           super
-          timer_execute(:nomad_alloc_cache_update, @nomad_alloc_cache_refresh_interval, repeat: true) {
+          timer_execute(:nomad_alloc_cache_update, @nomad_alloc_cache_refresh_interval, repeat: true) do
             allocation_map = @nomad_client.list_allocations
             @alloc_map_update_queue.push(allocation_map)
-          }
-        end
-
-
-        def try_update_alloc_cache
-          if !@alloc_map_update_queue.empty?
-            begin
-              loop do
-                @alloc_map_cache = @alloc_map_update_queue.pop(true)
-              end
-            rescue ThreadError
-              # ignore
-            end
-            log.info("Updated allocation cache")
           end
         end
 
-        def filter(tag, time, record)
+        def try_update_alloc_cache
+          return if @alloc_map_update_queue.empty?
+
+          begin
+            loop do
+              @alloc_map_cache = @alloc_map_update_queue.pop(true)
+            end
+          rescue ThreadError
+            # ignore
+          end
+          log.info('Updated allocation cache')
+        end
+
+        def filter(_tag, _time, record)
           record = record.transform_keys(&:to_sym)
           alloc_id = record[@alloc_id_field.to_sym]
           if alloc_id.nil?

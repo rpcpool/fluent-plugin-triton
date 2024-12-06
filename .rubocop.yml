@@ -22,6 +22,9 @@ Style/ClassVars:
   Exclude:
     - 'lib/fluent/plugin/filter_nomad.rb'
 
+Layout/LineLength:
+  Max: 125
+
 # Offense count: 5
 # Configuration parameters: AllowedConstants.
 Style/Documentation:

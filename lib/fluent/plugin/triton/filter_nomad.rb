@@ -14,7 +14,11 @@ module Fluent
         end
 
         registry_nomad_client_factory(:default) do |opts|
-          Nomad::NomadClient.load_from_env(nomad_token: opts[:nomad_token], nomad_addr: opts[:nomad_addr])
+          Nomad::NomadClient.load_from_env(
+            nomad_token: opts[:nomad_token], 
+            nomad_addr: opts[:nomad_addr],
+            nomad_ifname: opts[:nomad_ifname],
+          )
         end
 
         # Register this filter as "passthru"
@@ -31,6 +35,9 @@ module Fluent
         desc '(Optional) Nomad server address to execute API calls'
         config_param :nomad_addr, :string, default: nil
 
+        desc '(Optional) Network interface name to use for local Nomad client is running locally'
+        config_param :nomad_ifname, :string, default: nil
+
         desc '(Optional) Nomad token to authenticate API calls'
         config_param :nomad_token, :string, secret: true, default: nil
 
@@ -46,6 +53,8 @@ module Fluent
           nomad_client_factory_kwargs = {
             nomad_token: @nomad_token,
             nomad_addr: @nomad_addr
+            nomad_ifname: @nomad_ifname
+            is_local: @is_local
           }
           @nomad_client = @@nomad_client_factory_repo[@nomad_client_factory.to_sym].call(nomad_client_factory_kwargs)
           @alloc_map_cache = @nomad_client.list_allocations

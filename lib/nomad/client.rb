@@ -6,24 +6,16 @@ require 'socket'
 require 'uri'
 
 module Nomad
-  # Function to get the IP address bound to the `rpcpool` interface
-  def self.get_rpcpool_ip(ifname)
+  def self.if_lookup_ipv4(ifname)
     interfaces = Socket.getifaddrs.select do |ifaddr|
       ifaddr.name == ifname && ifaddr.addr && ifaddr.addr.ipv4?
     end
 
     if interfaces.empty?
-      puts 'Error: No IPv4 address found for the `rpcpool` interface.'
-      exit 1
+      raise "Error: No IPv4 address found for the `#{ifname}` interface."
     end
 
     interfaces.first.addr.ip_address
-  end
-
-  def self.default_interface
-    # Get the default route using the Socket library
-    addr_info = Socket.getifaddrs.find { |ifaddr| ifaddr.addr&.ipv4? && ifaddr.addr.ipv4_private? }
-    addr_info&.name
   end
 
   def self.summarize_alloc_resp(alloc)
@@ -35,20 +27,22 @@ module Nomad
       task_group: alloc['TaskGroup'],
       namespace: alloc['Namespace'],
       node_name: alloc['NodeName']
-      # :region => alloc['Job']['Region'],
     }
   end
 
-  def self.resolv_nomad_addr
+  def self.resolv_nomad_addr(ifname = nil)
     # Nomad server address dynamically determined
     nomad_addr = ENV['NOMAD_ADDR']
-
     nomad_addr = if nomad_addr.nil? || nomad_addr.empty?
-                   rpcpool_ip = Nomad.get_rpcpool_ip(default_interface)
-                   "http://#{rpcpool_ip}:4646"
-                 else
-                   nomad_addr
-                 end
+      nomad_ip = if ifname.nil?
+        "127.0.0.1"
+      else
+        Nomad.if_lookup_ipv4(ifname)
+      end
+      "http://#{nomad_ip}:4646"
+    else
+      nomad_addr
+    end
 
     nomad_addr_uri = URI.parse(nomad_addr)
     nomad_host = nomad_addr_uri.host
@@ -66,10 +60,10 @@ module Nomad
   class NomadClient
     def self.load_from_env(**kwargs)
       nomad_addr = if kwargs.key?(:nomad_addr)
-                     kwargs[:nomad_addr]
-                   else
-                     Nomad.resolv_nomad_addr
-                   end
+        kwargs[:nomad_addr]
+      else
+        Nomad.resolv_nomad_addr(ifname: kwargs[:nomad_ifname])
+      end
       nomad_token = kwargs[:nomad_token] || ENV['NOMAD_TOKEN']
       NomadClient.new(nomad_addr, nomad_token)
     end

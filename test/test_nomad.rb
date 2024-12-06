@@ -5,7 +5,7 @@ require 'net/http'
 require 'json'
 require 'socket'
 require 'uri'
-require './lib/nomad' # Assuming the class is in `nomad_client.rb`
+require 'nomad' # Assuming the class is in `nomad_client.rb`
 
 class TestNomadClientIntegration < Test::Unit::TestCase
   def setup

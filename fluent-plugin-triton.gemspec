@@ -1,10 +1,9 @@
-# frozen_string_literal: true
-
-require_relative 'lib/fluent/plugin/triton/version'
+lib = File.expand_path("../lib", __FILE__)
+$LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 
 Gem::Specification.new do |spec|
   spec.name = 'fluent-plugin-triton'
-  spec.version = Fluent::Plugin::Triton::VERSION
+  spec.version = '0.1.0'
   spec.authors = ['Louis-Vincent']
   spec.email = ['louis-vincent@triton.one']
 

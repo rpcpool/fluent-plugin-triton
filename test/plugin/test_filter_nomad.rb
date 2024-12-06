@@ -9,7 +9,7 @@ require 'fluent/test/helpers'
 require 'fluent/test/driver/filter'
 
 # your own plugin
-require './lib/fluent/plugin/triton'
+require 'fluent/plugin/filter_nomad'
 
 class FilterNomadTest < Test::Unit::TestCase
   include Fluent::Test::Helpers
@@ -47,8 +47,7 @@ class FilterNomadTest < Test::Unit::TestCase
   )
 
   def create_driver(conf = CONFIG)
-    p Fluent::Plugin::Triton.constants
-    Fluent::Test::Driver::Filter.new(Fluent::Plugin::Triton::FilterNomad).configure(conf)
+    Fluent::Test::Driver::Filter.new(Fluent::Plugin::FilterNomad).configure(conf)
   end
 
   def filter(config, messages)
@@ -82,7 +81,7 @@ class FilterNomadTest < Test::Unit::TestCase
         nomad_client_factory #{factory_name}
       )
 
-      Fluent::Plugin::Triton::FilterNomad.registry_nomad_client_factory(factory_name) do |_opts|
+      Fluent::Plugin::FilterNomad.registry_nomad_client_factory(factory_name) do |_opts|
         MockNomadClient.new
       end
 

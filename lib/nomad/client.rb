@@ -11,9 +11,7 @@ module Nomad
       ifaddr.name == ifname && ifaddr.addr && ifaddr.addr.ipv4?
     end
 
-    if interfaces.empty?
-      raise "Error: No IPv4 address found for the `#{ifname}` interface."
-    end
+    raise "Error: No IPv4 address found for the `#{ifname}` interface." if interfaces.empty?
 
     interfaces.first.addr.ip_address
   end
@@ -34,15 +32,15 @@ module Nomad
     # Nomad server address dynamically determined
     nomad_addr = ENV['NOMAD_ADDR']
     nomad_addr = if nomad_addr.nil? || nomad_addr.empty?
-      nomad_ip = if ifname.nil?
-        "127.0.0.1"
-      else
-        Nomad.if_lookup_ipv4(ifname)
-      end
-      "http://#{nomad_ip}:4646"
-    else
-      nomad_addr
-    end
+                   nomad_ip = if ifname.nil?
+                                '127.0.0.1'
+                              else
+                                Nomad.if_lookup_ipv4(ifname)
+                              end
+                   "http://#{nomad_ip}:4646"
+                 else
+                   nomad_addr
+                 end
 
     nomad_addr_uri = URI.parse(nomad_addr)
     nomad_host = nomad_addr_uri.host
@@ -60,10 +58,10 @@ module Nomad
   class NomadClient
     def self.load_from_env(**kwargs)
       nomad_addr = if kwargs.key?(:nomad_addr)
-        kwargs[:nomad_addr]
-      else
-        Nomad.resolv_nomad_addr(ifname: kwargs[:nomad_ifname])
-      end
+                     kwargs[:nomad_addr]
+                   else
+                     Nomad.resolv_nomad_addr(ifname: kwargs[:nomad_ifname])
+                   end
       nomad_token = kwargs[:nomad_token] || ENV['NOMAD_TOKEN']
       NomadClient.new(nomad_addr, nomad_token)
     end

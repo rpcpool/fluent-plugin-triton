@@ -15,12 +15,12 @@ Metrics/BlockLength:
 # Offense count: 3
 # Configuration parameters: CountComments, CountAsOne, AllowedMethods, AllowedPatterns.
 Metrics/MethodLength:
-  Max: 16
+  Max: 20
 
 # Offense count: 1
 Style/ClassVars:
   Exclude:
-    - 'lib/fluent/plugin/triton/filter_nomad.rb'
+    - 'lib/fluent/plugin/filter_nomad.rb'
 
 # Offense count: 5
 # Configuration parameters: AllowedConstants.
@@ -28,7 +28,6 @@ Style/Documentation:
   Exclude:
     - 'spec/**/*'
     - 'test/**/*'
-    - 'lib/fluent/plugin/triton.rb'
-    - 'lib/fluent/plugin/triton/filter_nomad.rb'
+    - 'lib/fluent/plugin/filter_nomad.rb'
     - 'lib/nomad.rb'
     - 'lib/nomad/client.rb'

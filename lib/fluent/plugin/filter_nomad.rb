@@ -13,11 +13,7 @@ module Fluent
       end
 
       registry_nomad_client_factory(:default) do |opts|
-        Nomad::NomadClient.load_from_env(
-          nomad_token: opts[:nomad_token],
-          nomad_addr: opts[:nomad_addr],
-          nomad_ifname: opts[:nomad_ifname]
-        )
+        Nomad::NomadClient.load_from_env(**opts)
       end
 
       # Register this filter as "passthru"
@@ -50,8 +46,8 @@ module Fluent
         super
         @alloc_map_update_queue = Queue.new
         nomad_client_factory_kwargs = {
-          nomad_token: @nomad_token,
           nomad_addr: @nomad_addr,
+          nomad_token: @nomad_token,
           nomad_ifname: @nomad_ifname
         }
         @nomad_client = @@nomad_client_factory_repo[@nomad_client_factory.to_sym].call(nomad_client_factory_kwargs)

@@ -57,12 +57,20 @@ module Nomad
 
   class NomadClient
     def self.load_from_env(**kwargs)
-      nomad_addr = if kwargs.key?(:nomad_addr)
+      nomad_addr = if !kwargs[:nomad_addr].nil?
                      kwargs[:nomad_addr]
                    else
                      Nomad.resolv_nomad_addr(ifname: kwargs[:nomad_ifname])
                    end
+      if nomad_addr.nil?
+        raise ArgumentError, 'Could not resolve Nomad address from the environment or the provided interface name.'
+      end
+
       nomad_token = kwargs[:nomad_token] || ENV['NOMAD_TOKEN']
+      if nomad_token.nil?
+        raise ArgumentError, 'The NOMAD_TOKEN environment variable must be set or provided in the configuration.'
+      end
+
       NomadClient.new(nomad_addr, nomad_token)
     end
 
@@ -114,8 +122,7 @@ module Nomad
       when Net::HTTPSuccess
         JSON.parse(response.body)
       else
-        puts "HTTP request failed: #{response.code} #{response.message}"
-        nil
+        raise "HTTP request failed: #{response.code} #{response.message}"
       end
     end
   end

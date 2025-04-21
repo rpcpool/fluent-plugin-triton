@@ -51,7 +51,12 @@ module Fluent
           nomad_ifname: @nomad_ifname
         }
         @nomad_client = @@nomad_client_factory_repo[@nomad_client_factory.to_sym].call(nomad_client_factory_kwargs)
-        @alloc_map_cache = @nomad_client.list_allocations
+        begin
+          @alloc_map_cache = @nomad_client.list_allocations
+        rescue Nomad::NomadError => e
+          @alloc_map_cache = {}
+          log.error("Nomad client error: #{e}")
+        end
         initial_cache_entries = @alloc_map_cache.size
         log.info("Nomad client initialized with nomad addr: #{@nomad_addr}, initial cache entries: #{initial_cache_entries}")
       end
@@ -60,7 +65,13 @@ module Fluent
         super
         log.info('Starting allocation cache update timer thread')
         timer_execute(:nomad_alloc_cache_update, @nomad_alloc_cache_refresh_interval, repeat: true) do
-          allocation_map = @nomad_client.list_allocations
+          log.info('Updating allocation cache')
+          begin
+            allocation_map = @nomad_client.list_allocations
+          rescue Nomad::NomadError => e
+            allocation_map = {}
+            log.error("Nomad client error: #{e}")
+          end
           @alloc_map_update_queue.push(allocation_map)
         end
       end

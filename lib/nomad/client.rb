@@ -42,16 +42,35 @@ module Nomad
                    nomad_addr
                  end
 
-    nomad_addr_uri = URI.parse(nomad_addr)
-    nomad_host = nomad_addr_uri.host
-    nomad_port = nomad_addr_uri.port
-    # Test the connection
+    # Check if the address is valid
+    _nomad_addr_uri = URI.parse(nomad_addr)
+    nomad_addr
+  end
 
-    begin
-      _sock = Socket.tcp(nomad_host, nomad_port, connect_timeout: 5)
-      nomad_addr
-    rescue StandardError
-      raise 'Error: Unable to connect to Nomad server.'
+  class NomadError < StandardError; end
+
+  class NomadConnectError < NomadError
+    def initialize(message)
+      super
+      @message = message
+    end
+
+    def to_s
+      "NomadConnectError: #{@message}"
+    end
+  end
+
+  class NomadClientRequestError < NomadError
+    attr_reader :code, :message
+
+    def initialize(code, message)
+      super
+      @code = code
+      @message = message
+    end
+
+    def to_s
+      "NomadClientRequestError: #{@code} - #{@message}"
     end
   end
 
@@ -114,15 +133,19 @@ module Nomad
       request = Net::HTTP::Get.new(uri)
       request['X-Nomad-Token'] = @nomad_token
 
-      response = Net::HTTP.start(uri.hostname, uri.port) do |http|
-        http.request(request)
+      begin
+        response = Net::HTTP.start(uri.hostname, uri.port) do |http|
+          http.request(request)
+        end
+      rescue SocketError => e
+        raise Nomad::NomadConnectError, "Could not connect to Nomad server: #{e.message}"
       end
 
       case response
       when Net::HTTPSuccess
         JSON.parse(response.body)
       else
-        raise "HTTP request failed: #{response.code} #{response.message}"
+        raise Nomad::NomadClientRequestError.new(response.code, response.message)
       end
     end
   end

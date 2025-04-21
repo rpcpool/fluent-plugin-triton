@@ -39,6 +39,12 @@ class FilterNomadTest < Test::Unit::TestCase
     end
   end
 
+  class BrokenNomadClient
+    def list_allocations
+      raise Nomad::NomadConnectError, 'Connection error'
+    end
+  end
+
   # default configuration for tests
   CONFIG = %(
     alloc_id_field alloc_id
@@ -99,6 +105,31 @@ class FilterNomadTest < Test::Unit::TestCase
       ]
       filtered_records = filter(conf, messages)
       assert_equal(expected, filtered_records)
+    end
+  end
+
+  sub_test_case 'plugin should not fail on nomad client error' do
+    test 'Nomad client error' do
+      random_suffix = (0...6).map { rand(65..90).chr }.join
+      factory_name = "factory_#{random_suffix}"
+
+      conf = %(
+        alloc_id_field alloc_id
+        nomad_addr http://localhost:4646
+        nomad_token secret
+        nomad_client_factory #{factory_name}
+      )
+
+      Fluent::Plugin::FilterNomad.registry_nomad_client_factory(factory_name) do |_opts|
+        BrokenNomadClient.new
+      end
+
+      messages = [
+        { alloc_id: 'abcde', message: 'This is test message' }
+      ]
+      # Expected output should be the same as input even if the client fails
+      output = filter(conf, messages)
+      assert_equal(messages, output)
     end
   end
 end

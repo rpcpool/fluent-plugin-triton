@@ -45,4 +45,22 @@ class TestNomadClientIntegration < Test::Unit::TestCase
     assert_not_nil allocation_info, 'Allocation info should not be nil'
     assert_equal allocation_info[:alloc_id], alloc_id, 'Allocation ID should match'
   end
+
+  def test_it_should_raise_nomad_client_error
+    broken_nomad_client = Nomad::NomadClient.new('http://invalid-url:4646', 'invalid-token')
+    actual_err = assert_raise do
+      broken_nomad_client.list_allocations
+    end
+
+    assert actual_err.is_a?(Nomad::NomadError), 'Should raise NomadError'
+  end
+
+  def test_load_from_env_with_invalid_url
+    temp = ENV['NOMAD_ADDR']
+
+    ENV['NOMAD_ADDR'] = 'http://invalid-url:4646'
+    Nomad::NomadClient.load_from_env
+  ensure
+    ENV['NOMAD_ADDR'] = temp
+  end
 end

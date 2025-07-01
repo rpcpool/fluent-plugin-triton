@@ -143,10 +143,10 @@ module Nomad
         end
       rescue SocketError => e
         @logger.error("NomadConnectError: Could not connect to Nomad server at #{uri.hostname}:#{uri.port}: #{e.message}. Returning empty data.")
-        return []
+        return [] # Return an empty array for consistency
      rescue Timeout::Error => e
         @logger.error("NomadConnectError: Timeout connecting to Nomad server at #{uri.hostname}:#{uri.port}: #{e.message}. Returning empty data.")
-        return []
+        return [] # Return an empty array for consistency
       end
 
       case response
@@ -156,7 +156,7 @@ module Nomad
         @logger.error("NomadClientRequestError: Request to #{uri} failed with status #{response.code} - #{response.message}. Returning empty data.")
         return [] # Return an empty array for consistency
       end
-    rescue JSON::ParserError => e # <--- ADD THIS BLOCK for malformed JSON responses
+    rescue JSON::ParserError => e
         @logger.error("JSONParseError: Failed to parse JSON response from #{uri}: #{e.message}. Returning empty data.")
         return []
     end

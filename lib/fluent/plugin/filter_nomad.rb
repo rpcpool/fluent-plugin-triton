@@ -55,7 +55,7 @@ module Fluent
           @alloc_map_cache = @nomad_client.list_allocations
         rescue Nomad::NomadError => e
           @alloc_map_cache = {}
-          log.error("Nomad client error: #{e}")
+          log.warn("Nomad client error: #{e}")
         end
         initial_cache_entries = @alloc_map_cache.size
         log.info("Nomad client initialized with nomad addr: #{@nomad_addr}, initial cache entries: #{initial_cache_entries}")
@@ -70,7 +70,7 @@ module Fluent
             allocation_map = @nomad_client.list_allocations
           rescue Nomad::NomadError => e
             allocation_map = {}
-            log.error("Nomad client error: #{e}")
+            log.warn("Nomad client error: #{e}")
           end
           @alloc_map_update_queue.push(allocation_map)
         end

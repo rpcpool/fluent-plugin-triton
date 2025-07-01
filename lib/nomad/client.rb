@@ -4,6 +4,7 @@ require 'net/http'
 require 'json'
 require 'socket'
 require 'uri'
+require 'logger'
 
 module Nomad
   def self.if_lookup_ipv4(ifname)
@@ -96,6 +97,8 @@ module Nomad
     def initialize(nomad_addr, nomad_token)
       @nomad_addr = nomad_addr
       @nomad_token = nomad_token
+      @logger = Logger.new(STDOUT)
+      @logger.level = Logger::WARN # Log silent errors as warnings
     end
 
     def list_nodes
@@ -133,20 +136,29 @@ module Nomad
       request = Net::HTTP::Get.new(uri)
       request['X-Nomad-Token'] = @nomad_token
 
+      response = nil
       begin
         response = Net::HTTP.start(uri.hostname, uri.port) do |http|
           http.request(request)
         end
       rescue SocketError => e
-        raise Nomad::NomadConnectError, "Could not connect to Nomad server: #{e.message}"
+        @logger.warn("NomadConnectError: Could not connect to Nomad server at #{uri.hostname}:#{uri.port}: #{e.message}. Returning empty data.")
+        return []
+     rescue Timeout::Error => e
+        @logger.warn("NomadConnectError: Timeout connecting to Nomad server at #{uri.hostname}:#{uri.port}: #{e.message}. Returning empty data.")
+        return []
       end
 
       case response
       when Net::HTTPSuccess
         JSON.parse(response.body)
       else
-        raise Nomad::NomadClientRequestError.new(response.code, response.message)
+        @logger.warn("NomadClientRequestError: Request to #{uri} failed with status #{response.code} - #{response.message}. Returning empty data.")
+        return [] # Return an empty array for consistency
       end
+    rescue JSON::ParserError => e # <--- ADD THIS BLOCK for malformed JSON responses
+        @logger.warn("JSONParseError: Failed to parse JSON response from #{uri}: #{e.message}. Returning empty data.")
+        return []
     end
   end
 end

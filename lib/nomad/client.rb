@@ -98,7 +98,7 @@ module Nomad
       @nomad_addr = nomad_addr
       @nomad_token = nomad_token
       @logger = Logger.new(STDOUT)
-      @logger.level = Logger::WARN # Log silent errors as warnings
+      @logger.level = Logger::error # Log silent errors as warnings
     end
 
     def list_nodes
@@ -142,10 +142,10 @@ module Nomad
           http.request(request)
         end
       rescue SocketError => e
-        @logger.warn("NomadConnectError: Could not connect to Nomad server at #{uri.hostname}:#{uri.port}: #{e.message}. Returning empty data.")
+        @logger.error("NomadConnectError: Could not connect to Nomad server at #{uri.hostname}:#{uri.port}: #{e.message}. Returning empty data.")
         return []
      rescue Timeout::Error => e
-        @logger.warn("NomadConnectError: Timeout connecting to Nomad server at #{uri.hostname}:#{uri.port}: #{e.message}. Returning empty data.")
+        @logger.error("NomadConnectError: Timeout connecting to Nomad server at #{uri.hostname}:#{uri.port}: #{e.message}. Returning empty data.")
         return []
       end
 
@@ -153,11 +153,11 @@ module Nomad
       when Net::HTTPSuccess
         JSON.parse(response.body)
       else
-        @logger.warn("NomadClientRequestError: Request to #{uri} failed with status #{response.code} - #{response.message}. Returning empty data.")
+        @logger.error("NomadClientRequestError: Request to #{uri} failed with status #{response.code} - #{response.message}. Returning empty data.")
         return [] # Return an empty array for consistency
       end
     rescue JSON::ParserError => e # <--- ADD THIS BLOCK for malformed JSON responses
-        @logger.warn("JSONParseError: Failed to parse JSON response from #{uri}: #{e.message}. Returning empty data.")
+        @logger.error("JSONParseError: Failed to parse JSON response from #{uri}: #{e.message}. Returning empty data.")
         return []
     end
   end

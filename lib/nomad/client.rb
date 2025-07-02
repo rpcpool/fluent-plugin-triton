@@ -98,7 +98,7 @@ module Nomad
       @nomad_addr = nomad_addr
       @nomad_token = nomad_token
       @logger = Logger.new(STDOUT)
-      @logger.level = Logger::error # Log silent errors as warnings
+      @logger.level = Logger::WARN # Log silent errors as warnings
     end
 
     def list_nodes

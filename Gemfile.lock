@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    fluent-plugin-triton (0.1.1)
+    fluent-plugin-triton (0.1.2)
       fluentd (~> 1.0)
       json (~> 2.5)
 

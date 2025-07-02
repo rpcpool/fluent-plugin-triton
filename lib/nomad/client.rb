@@ -142,10 +142,10 @@ module Nomad
           http.request(request)
         end
       rescue SocketError => e
-        @logger.error("NomadConnectError: Could not connect to Nomad server at #{uri.hostname}:#{uri.port}: #{e.message}. Returning empty data.")
+        @logger.warn("NomadConnectError: Could not connect to Nomad server at #{uri.hostname}:#{uri.port}: #{e.message}. Returning empty data.")
         return [] # Return an empty array for consistency
      rescue Timeout::Error => e
-        @logger.error("NomadConnectError: Timeout connecting to Nomad server at #{uri.hostname}:#{uri.port}: #{e.message}. Returning empty data.")
+        @logger.warn("NomadConnectError: Timeout connecting to Nomad server at #{uri.hostname}:#{uri.port}: #{e.message}. Returning empty data.")
         return [] # Return an empty array for consistency
       end
 
@@ -153,11 +153,11 @@ module Nomad
       when Net::HTTPSuccess
         JSON.parse(response.body)
       else
-        @logger.error("NomadClientRequestError: Request to #{uri} failed with status #{response.code} - #{response.message}. Returning empty data.")
+        @logger.warn("NomadClientRequestError: Request to #{uri} failed with status #{response.code} - #{response.message}. Returning empty data.")
         return [] # Return an empty array for consistency
       end
     rescue JSON::ParserError => e
-        @logger.error("JSONParseError: Failed to parse JSON response from #{uri}: #{e.message}. Returning empty data.")
+        @logger.warn("JSONParseError: Failed to parse JSON response from #{uri}: #{e.message}. Returning empty data.")
         return []
     end
   end

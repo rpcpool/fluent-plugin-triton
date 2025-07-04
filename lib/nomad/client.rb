@@ -99,6 +99,7 @@ module Nomad
       @nomad_token = nomad_token
       @logger = Logger.new(STDOUT)
       @logger.level = Logger::WARN # Log silent errors as warnings
+      puts "DEBUG: NomadClient initialized for addr: #{@nomad_addr}" # <--- ADD THIS DEBUG
     end
 
     def list_nodes
@@ -132,22 +133,28 @@ module Nomad
 
     # Function to make GET requests with headers
     def get_request(path)
+      puts "DEBUG: Attempting GET request to: #{@nomad_addr}#{path}" # <--- ADD THIS DEBUG
       uri = URI("#{@nomad_addr}#{path}")
       request = Net::HTTP::Get.new(uri)
       request['X-Nomad-Token'] = @nomad_token
 
       response = nil
       begin
+        puts "DEBUG: Entering Net::HTTP.start block." # <--- ADD THIS DEBUG
         response = Net::HTTP.start(uri.hostname, uri.port) do |http|
           http.request(request)
         end
       rescue SocketError => e
+        puts "DEBUG: === SocketError RESCUE HIT! ===" # <--- ADD THIS DEBUG
         @logger.warn("NomadConnectError: Could not connect to Nomad server at #{uri.hostname}:#{uri.port}: #{e.message}. Returning empty data.")
         return [] # Return an empty array for consistency
      rescue Timeout::Error => e
+        puts "DEBUG: === Timeout::Error RESCUE HIT! ===" # <--- ADD THIS DEBUG
         @logger.warn("NomadConnectError: Timeout connecting to Nomad server at #{uri.hostname}:#{uri.port}: #{e.message}. Returning empty data.")
         return [] # Return an empty array for consistency
       end
+
+      puts "DEBUG: Exiting Net::HTTP.start block (no immediate exception)." # <--- ADD THIS DEBUG
 
       case response
       when Net::HTTPSuccess
@@ -157,6 +164,7 @@ module Nomad
         return [] # Return an empty array for consistency
       end
     rescue JSON::ParserError => e
+        puts "DEBUG: === JSON::ParserError RESCUE HIT! ==="
         @logger.warn("JSONParseError: Failed to parse JSON response from #{uri}: #{e.message}. Returning empty data.")
         return []
     end

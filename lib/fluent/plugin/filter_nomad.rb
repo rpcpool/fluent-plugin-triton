@@ -45,6 +45,7 @@ module Fluent
       def configure(conf)
         super
         @alloc_map_update_queue = Queue.new
+        @filter_tick = 0
         nomad_client_factory_kwargs = {
           nomad_addr: @nomad_addr,
           nomad_token: @nomad_token,
@@ -55,7 +56,7 @@ module Fluent
           @alloc_map_cache = @nomad_client.list_allocations
         rescue Nomad::NomadError => e
           @alloc_map_cache = {}
-          log.error("Nomad client error: #{e}")
+          log.warn("Nomad client error: #{e}")
         end
         initial_cache_entries = @alloc_map_cache.size
         log.info("Nomad client initialized with nomad addr: #{@nomad_addr}, initial cache entries: #{initial_cache_entries}")
@@ -76,6 +77,19 @@ module Fluent
         end
       end
 
+      # Tries to fetch the allocation summary from the cache.
+      # If the allocation is not found, it tries to see if any cache update is pending, thus the "forgiving" prefix.
+      #
+      # @param alloc_id [String] The allocation ID to fetch.
+      # @return [Hash, nil] The allocation summary if found, otherwise nil..
+      def forgiving_fetch_alloc_summary(alloc_id)
+        @alloc_map_cache[alloc_id] || begin
+          log.warn("Allocation #{alloc_id} not found in cache, fetching from Nomad")
+          try_update_alloc_cache
+          @alloc_map_cache[alloc_id]
+        end
+      end
+
       def try_update_alloc_cache
         return if @alloc_map_update_queue.empty?
 
@@ -89,20 +103,24 @@ module Fluent
         log.info('Updated allocation cache')
       end
 
+      # This method is called for each record to filter it.
+      # It retrieves the allocation summary for the given alloc_id and merges it into the record.
+      # # If the alloc_id is not present in the record, it logs a warning and returns the original
+      #
+      # @param _tag [String] The tag of the record (not used in this filter).
+      # @param _time [Integer] The time of the record (not used in this filter).
+      # @param record [Hash] The record to filter.
       def filter(_tag, _time, record)
+        try_update_alloc_cache
         record = record.transform_keys(&:to_sym)
         alloc_id = record[@alloc_id_field.to_sym]
         if alloc_id.nil?
           log.warn("Record does not contain alloc_id field #{@alloc_id_field}")
           return record
         end
-        alloc_summary = @alloc_map_cache[alloc_id]
-        if alloc_summary.nil?
-          log.warn("Allocation #{alloc_id} not found in cache")
-        else
-          record.merge!(alloc_summary)
-        end
-        record
+        alloc_summary = forgiving_fetch_alloc_summary alloc_id
+        log.warn("Allocation #{alloc_id} not found in cache") if alloc_summary.nil?
+        record.merge!(alloc_summary || {})
       end
     end
   end

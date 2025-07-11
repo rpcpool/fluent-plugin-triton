@@ -10,12 +10,15 @@
 # Configuration parameters: CountComments, CountAsOne, AllowedMethods, AllowedPatterns.
 # AllowedMethods: refine
 Metrics/BlockLength:
-  Max: 27
+  Enabled: false
 
 # Offense count: 3
 # Configuration parameters: CountComments, CountAsOne, AllowedMethods, AllowedPatterns.
 Metrics/MethodLength:
-  Max: 20
+  Max: 100
+
+Metrics/ClassLength:
+  Enabled: false
 
 # Offense count: 1
 Style/ClassVars:

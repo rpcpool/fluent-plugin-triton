@@ -5,9 +5,9 @@ $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 
 Gem::Specification.new do |spec|
   spec.name = 'fluent-plugin-triton'
-  spec.version = '0.1.1'
-  spec.authors = ['Louis-Vincent']
-  spec.email = ['louis-vincent@triton.one']
+  spec.version = '0.1.2'
+  spec.authors = ['Louis-Vincent Boudreault', 'Triton One']
+  spec.email = ['louis-vincent@triton.one', 'support@triton.one']
 
   spec.summary = 'Custom Fluentd plugin used a Triton'
   spec.description = 'Custom Fluentd plugin used a Triton'

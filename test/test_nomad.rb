@@ -53,6 +53,7 @@ class TestNomadClientIntegration < Test::Unit::TestCase
     end
 
     assert actual_err.is_a?(Nomad::NomadError), 'Should raise NomadError'
+    assert actual_err.is_a?(Nomad::NomadConnectError), 'Should raise NomadConnectError'
   end
 
   def test_load_from_env_with_invalid_url

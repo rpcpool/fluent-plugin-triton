@@ -56,6 +56,35 @@ class TestNomadClientIntegration < Test::Unit::TestCase
     assert actual_err.is_a?(Nomad::NomadConnectError), 'Should raise NomadConnectError'
   end
 
+  def test_it_should_timeout_connection_attempt_after_1_seconds
+    server, thread = start_echo_server port: 4000, delay: 5
+    broken_nomad_client = Nomad::NomadClient.new('http://localhost:4000', 'invalid-token', nomad_request_timeout: 1)
+    before = Time.now
+    actual_err = assert_raise do
+      broken_nomad_client.list_allocations
+    end
+
+    after = Time.now
+    elapsed_time = after - before
+    # p "Elapsed time: #{elapsed_time} seconds"
+    assert_operator elapsed_time, :>=, 1, 'Should timeout after at least'
+    assert actual_err.is_a?(Nomad::NomadError), 'Should raise NomadError'
+    assert actual_err.is_a?(Nomad::NomadConnectError), 'Should raise NomadConnectError'
+  ensure
+    # Ensure the connection is closed
+    server&.close
+    thread&.kill
+  end
+
+  def test_it_should_handle_4xx_client_errors
+    broken_nomad_client = Nomad::NomadClient.new('https://httpbin.org/status/400', 'invalid-token', nomad_request_timeout: 1)
+    actual_err = assert_raise do
+      broken_nomad_client.list_allocations
+    end
+    assert actual_err.is_a?(Nomad::NomadError), 'Should raise NomadError'
+    assert actual_err.is_a?(Nomad::NomadClientRequestError), 'Should raise NomadConnectError'
+  end
+
   def test_load_from_env_with_invalid_url
     temp = ENV['NOMAD_ADDR']
 
@@ -64,4 +93,22 @@ class TestNomadClientIntegration < Test::Unit::TestCase
   ensure
     ENV['NOMAD_ADDR'] = temp
   end
+end
+
+def start_echo_server(port: 4000, delay: 0.1)
+  server = TCPServer.new('localhost', port)
+
+  thread = Thread.new do
+    loop do
+      client = server.accept
+      Thread.new(client) do |conn|
+        while conn.gets
+          sleep delay # Simulate processing delay
+          conn.close
+        end
+      end
+    end
+  end
+
+  [server, thread]
 end

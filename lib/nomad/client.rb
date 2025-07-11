@@ -6,6 +6,8 @@ require 'socket'
 require 'uri'
 
 module Nomad
+  DEFAULT_NOMAD_REQUEST_TIMEOUT_SECONDS = 5
+
   def self.if_lookup_ipv4(ifname)
     interfaces = Socket.getifaddrs.select do |ifaddr|
       ifaddr.name == ifname && ifaddr.addr && ifaddr.addr.ipv4?
@@ -64,9 +66,8 @@ module Nomad
     attr_reader :code, :message
 
     def initialize(code, message)
-      super
+      super message
       @code = code
-      @message = message
     end
 
     def to_s
@@ -90,12 +91,17 @@ module Nomad
         raise ArgumentError, 'The NOMAD_TOKEN environment variable must be set or provided in the configuration.'
       end
 
-      NomadClient.new(nomad_addr, nomad_token)
+      NomadClient.new(nomad_addr, nomad_token, nomad_request_timeout: kwargs[:nomad_request_timeout])
     end
 
-    def initialize(nomad_addr, nomad_token)
+    def initialize(
+      nomad_addr,
+      nomad_token,
+      nomad_request_timeout: nil
+    )
       @nomad_addr = nomad_addr
       @nomad_token = nomad_token
+      @nomad_request_timeout = nomad_request_timeout || Nomad::DEFAULT_NOMAD_REQUEST_TIMEOUT_SECONDS
     end
 
     def list_nodes
@@ -134,11 +140,19 @@ module Nomad
       request['X-Nomad-Token'] = @nomad_token
 
       begin
-        response = Net::HTTP.start(uri.hostname, uri.port) do |http|
+        response = Net::HTTP.start(
+          uri.hostname,
+          uri.port,
+          open_timeout: @nomad_request_timeout,
+          read_timeout: @nomad_request_timeout,
+          write_timeout: @nomad_request_timeout
+        ) do |http|
           http.request(request)
         end
+      rescue Timeout::Error => e
+        raise Nomad::NomadConnectError.new('Request to Nomad server timed out'), cause: e
       rescue SocketError => e
-        raise Nomad::NomadConnectError, "Could not connect to Nomad server: #{e.message}"
+        raise Nomad::NomadConnectError.new('Could not connect to Nomad server'), cause: e
       end
 
       case response

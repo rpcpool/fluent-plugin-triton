@@ -42,6 +42,9 @@ module Fluent
       desc '(Optional) Nomad allocation cache refresh interval in seconds'
       config_param :nomad_alloc_cache_refresh_interval, :time, default: 15
 
+      desc '(Optional) Nomad request timeout in seconds, defaults to 5 seconds'
+      config_param :nomad_request_timeout, :time, default: 10
+
       def configure(conf)
         super
         @alloc_map_update_queue = Queue.new
@@ -49,14 +52,15 @@ module Fluent
         nomad_client_factory_kwargs = {
           nomad_addr: @nomad_addr,
           nomad_token: @nomad_token,
-          nomad_ifname: @nomad_ifname
+          nomad_ifname: @nomad_ifname,
+          nomad_request_timeout: @nomad_request_timeout
         }
         @nomad_client = @@nomad_client_factory_repo[@nomad_client_factory.to_sym].call(nomad_client_factory_kwargs)
         begin
           @alloc_map_cache = @nomad_client.list_allocations
         rescue Nomad::NomadError => e
           @alloc_map_cache = {}
-          log.warn("Nomad client error: #{e}")
+          log.warn("Nomad client error: #{e}, cause: #{e.cause}")
         end
         initial_cache_entries = @alloc_map_cache.size
         log.info("Nomad client initialized with nomad addr: #{@nomad_addr}, initial cache entries: #{initial_cache_entries}")
@@ -71,7 +75,7 @@ module Fluent
             allocation_map = @nomad_client.list_allocations
           rescue Nomad::NomadError => e
             allocation_map = {}
-            log.error("Nomad client error: #{e}")
+            log.error("Nomad client error: #{e}, cause: #{e.cause}")
           end
           @alloc_map_update_queue.push(allocation_map)
         end

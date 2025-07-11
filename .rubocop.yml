@@ -12,6 +12,9 @@
 Metrics/BlockLength:
   Enabled: false
 
+Metrics/AbcSize:
+  Enabled: false
+
 # Offense count: 3
 # Configuration parameters: CountComments, CountAsOne, AllowedMethods, AllowedPatterns.
 Metrics/MethodLength:

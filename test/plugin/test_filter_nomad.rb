@@ -168,7 +168,7 @@ class FilterNomadTest < Test::Unit::TestCase
         nomad_addr http://localhost:4646
         nomad_token secret
         nomad_client_factory #{factory_name}
-        nomad_alloc_cache_update_tick_interval 1
+        nomad_alloc_cache_refresh_interval 1
       )
 
       # Initially, the mock client can only allocation for 'abcde', not 'abcdf'
@@ -237,7 +237,7 @@ class FilterNomadTest < Test::Unit::TestCase
         nomad_addr http://localhost:4646
         nomad_token secret
         nomad_client_factory #{factory_name}
-        nomad_alloc_cache_update_tick_interval 1
+        nomad_alloc_cache_refresh_interval 1
       )
 
       # Initially, the mock client can only allocation for 'abcde', not 'abcdf'

@@ -3,7 +3,9 @@
 
 - relaced error-level log during configure for warn-level, to remove confusion when doing ops.
 - Fix missing call to `try_update_alloc_cache` in the nomad plugin.
-
+- Fix `NomadClientRequestError` constructor
+- Added timeout support for nomad request
+- Added unit tests for 4xx support + timeout support of nomad client
 
 # [0.1.1]
 

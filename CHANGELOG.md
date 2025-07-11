@@ -1,4 +1,8 @@
 
+# [0.1.3]
+
+- Catch systemcall error during http request.
+
 # [0.1.2]
 
 - relaced error-level log during configure for warn-level, to remove confusion when doing ops.

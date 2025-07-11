@@ -149,6 +149,8 @@ module Nomad
         ) do |http|
           http.request(request)
         end
+      rescue SystemCallError => e
+        raise Nomad::NomadConnectError.new('Could not connect to Nomad server'), cause: e
       rescue Timeout::Error => e
         raise Nomad::NomadConnectError.new('Request to Nomad server timed out'), cause: e
       rescue SocketError => e

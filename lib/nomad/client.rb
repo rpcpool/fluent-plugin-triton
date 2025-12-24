@@ -116,16 +116,16 @@ module Nomad
       node&.[]('ID')
     end
 
-    def list_allocations(namespace: '*')
-      allocations = get_request('/v1/allocations', namespace: namespace)
+    def list_allocations
+      allocations = get_request('/v1/allocations')
       allocations.to_h do |alloc|
         summ_alloc = Nomad.summarize_alloc_resp(alloc)
         [summ_alloc[:alloc_id], summ_alloc]
       end
     end
 
-    def get_allocation_info(alloc_id, namespace: '*')
-      alloc = get_request("/v1/allocation/#{alloc_id}", namespace: namespace)
+    def get_allocation_info(alloc_id)
+      alloc = get_request("/v1/allocation/#{alloc_id}")
       if alloc.nil?
         nil
       else
@@ -134,11 +134,18 @@ module Nomad
     end
 
     # Function to make GET requests with headers
-    def get_request(path, namespace: nil)
+    def get_request(path)
+      # Collect query parameters in a dictionary (hash)
+      params = { 
+        # by default we're only getting default namespace, use * to get all namespaces
+        'namespace' => '*',
+        # we don't need any of this and it's big part of the responses
+        'task_states' => 'false' 
+      }
       uri = URI("#{@nomad_addr}#{path}")
+      uri.query = URI.encode_www_form(params)
       request = Net::HTTP::Get.new(uri)
       request['X-Nomad-Token'] = @nomad_token
-      request['X-Nomad-Namespace'] = namespace unless namespace.nil?
 
       begin
         response = Net::HTTP.start(

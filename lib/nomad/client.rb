@@ -116,16 +116,16 @@ module Nomad
       node&.[]('ID')
     end
 
-    def list_allocations
-      allocations = get_request('/v1/allocations')
+    def list_allocations(namespace: '*')
+      allocations = get_request('/v1/allocations', namespace: namespace)
       allocations.to_h do |alloc|
         summ_alloc = Nomad.summarize_alloc_resp(alloc)
         [summ_alloc[:alloc_id], summ_alloc]
       end
     end
 
-    def get_allocation_info(alloc_id)
-      alloc = get_request("/v1/allocation/#{alloc_id}")
+    def get_allocation_info(alloc_id, namespace: '*')
+      alloc = get_request("/v1/allocation/#{alloc_id}", namespace: namespace)
       if alloc.nil?
         nil
       else
@@ -134,10 +134,11 @@ module Nomad
     end
 
     # Function to make GET requests with headers
-    def get_request(path)
+    def get_request(path, namespace: nil)
       uri = URI("#{@nomad_addr}#{path}")
       request = Net::HTTP::Get.new(uri)
       request['X-Nomad-Token'] = @nomad_token
+      request['X-Nomad-Namespace'] = namespace unless namespace.nil?
 
       begin
         response = Net::HTTP.start(
